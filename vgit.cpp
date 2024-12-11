@@ -215,9 +215,29 @@ vgit::CMD_States vgit::vgit_add(const std::string &message)
     return CMD_States::Success;
 }
 
-void vgit::scan_file(const std::string& message, const std::string& extenstion)
+void vgit::scan_file(const std::string& path, const std::string& extenstion)
 {
-    
+    if (std::filesystem::is_directory(path)) 
+    {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) 
+        {
+            if(entry.path().string().find(extenstion) != std::string::npos)
+            {
+                auto rang = ignored_files.equal_range("files");
+                for(auto it = rang.first; it != rang.second; ++it)
+                {
+                    if(it->second == entry.path().string()) {
+                        continue;
+                    }else
+                    {
+                        std::cout << Colors::GREEN << "[File] " << entry.path() << " (Size: " << std::filesystem::file_size(entry.path()) << " bytes)" << Colors::RESET << "\n";
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 
@@ -275,6 +295,7 @@ void vgit::add_all_files(const std::string& message)
 {
     scan_path(message);
 }
+
 
 
 void vgit::add_paths(const std::string& message)
