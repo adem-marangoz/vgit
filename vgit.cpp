@@ -37,7 +37,7 @@ vgit::vgit(): main_directoryPath(std::filesystem::current_path()), ignored_files
     patternFunctions[R"(.*\/\*)"] = [this](const  std::string& ignored_item) {
         add_paths(ignored_item);
     };
-    patternFunctions[R"(.*\/\*\.\w+$)"] = [this](const std::string& ignored_item) {
+    patternFunctions[R"(^.*\*\.\w+$)"] = [this](const std::string& ignored_item) {
         add_extensions(ignored_item);
     };
     
@@ -182,7 +182,7 @@ vgit::CMD_States vgit::vgit_add(const std::string &message)
     {
         if(message == ".")
         {
-            add_all_files(ignored_files);
+            add_all_files(main_directoryPath.string());
         }else
         {
             std::stringstream ss(message);
@@ -195,6 +195,7 @@ vgit::CMD_States vgit::vgit_add(const std::string &message)
                     std::regex regexPattern(pattern);
                     if (std::regex_match(arg, regexPattern))
                     {
+                        std::cout << "Matched pattern \"" << pattern << "\" for \"" << arg << "\"" << std::endl;
                         func(arg);
                         patternMatched = true;
                         break;
@@ -212,32 +213,31 @@ vgit::CMD_States vgit::vgit_add(const std::string &message)
         std::cout << "Error: This must don't have any arguments" << std::endl;
     }
     return CMD_States::Success;
-    std::vector<std::string> ignore_patterns {"/*.", "/*", "*.", "."};
 }
 
-void vgit::scan_path(const std::string&)
+void vgit::scan_file(const std::string& message, const std::string& extenstion)
 {
-
+    
 }
 
-void vgit::add_all_files(const std::multimap<std::string, std::string>& ignored_items)
+
+void vgit::scan_path(const std::string& path)
 {
-    if (std::filesystem::is_directory(main_directoryPath)) 
+    if (std::filesystem::is_directory(path)) 
     {
-        std::cout << " ========================== " << std::endl;
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(main_directoryPath)) 
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) 
         {
             const auto target = entry.path().string();    
             bool isIgnored = false;
 
-            for (const auto& [key, value] : ignored_items) 
+            for (const auto& [key, value] : ignored_files) 
             {
                 if (key == "extensions") // check if file extension is ignored
                 {
                     std::string regexPattern = std::regex_replace(value, std::regex(R"(\*)"), R"(.*)");
                     std::regex pattern(regexPattern, std::regex::icase); // ignore case
                     if (std::regex_match(target, pattern)) {
-                        std::cout << Colors::RED << "[Ignored] pattern: " << value << Colors::RESET << "\n";
+                        std::cout << Colors::RED << "[Ignored] pattern: " << entry.path() << Colors::RESET << "\n";
                         isIgnored = true;
                         break;
                     }
@@ -271,41 +271,37 @@ void vgit::add_all_files(const std::multimap<std::string, std::string>& ignored_
     }
 }
 
+void vgit::add_all_files(const std::string& message)
+{
+    scan_path(message);
+}
+
 
 void vgit::add_paths(const std::string& message)
 {
+    std::cout << "===============add paths===============" << std::endl;
     size_t pos = message.rfind('/');
     std::string path = (pos != std::string::npos) ? message.substr(0, pos + 1) : message;
     path  = main_directoryPath.string() + "/" + path;
-    auto rang = ignored_files.equal_range("paths");
-
-    for(auto it = rang.first; it != rang.second; ++it)
-    {
-        if(it->second == path) {
-            std::cout << Colors::RED << "[Ignored] path: " << path << Colors::RESET << "\n";
-            continue;
-        }else
-        {
-            for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) 
-            {
-                if(std::filesystem::is_regular_file(entry.path()))
-                {
-                    // @TODO : add to index file
-                    std::cout << Colors::GREEN << "[File] " << entry.path() << " (Size: " << std::filesystem::file_size(entry.path()) << " bytes)" << Colors::RESET << "\n";
-                }
-            }
-        }
-        // std::cout << path << std::endl;
-    }
+    scan_path(path);
 }
 
 void vgit::add_extensions(const std::string& message)
 {
-    // std::cout << "add extensions" << std::endl;
+    std::cout << "===============add extensions===============" << std::endl;
+    size_t pos = message.rfind('/');
+    std::string path = (pos != std::string::npos) ? message.substr(0, pos + 1) : message;
+    path  = main_directoryPath.string() + "/" + path;
+    pos = message.rfind('.');
+    std::string extension = (pos != std::string::npos) ? message.substr(pos) : message;
+    std::cout << "extension" << extension << std::endl;
+    scan_file(path, extension);
+
 }
 
 void vgit::add_files(const std::string& message)
 {
+    std::cout << "===============add files===============" << std::endl;
     size_t pos = message.rfind('/');
     std::string path = (pos != std::string::npos) ? message.substr(0, pos + 1) : message;
     std::string filename = (pos != std::string::npos) ? message.substr(pos + 1) : message;

@@ -118,3 +118,20 @@ vgit::CMD_States vgit::vgit_help(const std::string &message){
     
     return CMD_States::Success;
 }
+
+
+
+//////////////////
+ignore paths
+    how/
+
+ignore extensions
+    *.py
+    *.exe
+    folder1/*.cpp
+
+
+ignore files
+    folder1/text1.txt
+    folder2/folder1/text1.txt
+    ttet.cpp

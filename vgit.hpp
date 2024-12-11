@@ -27,11 +27,12 @@ private:
         Success,
         Error
     };
-void add_all_files(const std::multimap<std::string, std::string>& ignored_items);
+void add_all_files(const std::string&);
 void add_paths(const std::string&);
 void add_extensions(const std::string&);
 void add_files(const std::string&);
 void scan_path(const std::string&);
+void scan_file(const std::string&, const std::string&);
 const std::multimap<std::string, std::string> Ignore_list(void);
 bool isValidPattern(const std::string& input);
 CMD_States vgit_init(const std::string &message) noexcept;
