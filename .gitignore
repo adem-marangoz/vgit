@@ -1,0 +1,7 @@
+how/
+*.py
+folder1/text1.txt
+folder2/folder1/text1.txt
+ttet.cpp
+*.exe
+folder1/*.cpp
